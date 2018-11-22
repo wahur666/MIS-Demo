@@ -40,7 +40,7 @@ export class Button extends AbstractDrawable {
         this.buttonRect.SetColor(COLOR.GREEN);
     }
 
-    DelectThis() {
-        this.buttonRect.SetColor(color.BLACK);
+    DeselectThis() {
+        this.buttonRect.SetColor(COLOR.BLACK);
     }
 }
