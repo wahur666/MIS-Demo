@@ -18,11 +18,11 @@ export class GUI {
         this.canvasRect = this.canvas.getBoundingClientRect();
 
         this.vertexButton = new Button(200, 20, 150, 50, "Vertex", 10);
-        this.vertexButton.OnClick = this.SelectVertexOrEdge.bind(this);
+        this.vertexButton.OnClick = this.vertexButton.SelectThis;
         this.Add(this.vertexButton);
 
         this.edgeButton = new Button(380, 20, 150, 50, "Edge", 20);
-        this.edgeButton.OnClick = this.SelectVertexOrEdge.bind(this);
+        this.edgeButton.OnClick = this.edgeButton.SelectThisR;
         this.Add(this.edgeButton);
 
         this.addButton = new Button(20, 100, 150, 50, "Add", 35);
@@ -134,7 +134,7 @@ export class GUI {
     SelectVertexOrEdge(event) {
         console.log("QWEQWEQW")
         console.log(event);
-        
+
     }
 
     SelectMode() {

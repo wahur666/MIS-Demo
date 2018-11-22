@@ -21,7 +21,7 @@ export class Button extends AbstractDrawable {
     }
 
     IsInside(position){
-        return this.x <= position[0] && this.x + this.h >= position[0] && this.y <= position[1] && this.y + this.w >= position[1];
+        return this.x <= position[0] && this.x + this.w >= position[0] && this.y <= position[1] && this.y + this.h >= position[1];
     }
 
     OnClick(eventType, context) {
