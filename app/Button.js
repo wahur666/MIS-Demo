@@ -1,7 +1,7 @@
 import { AbstractDrawable } from "./AbstractDrawable.js";
 import { COLOR } from "./Constants.js";
 import { Rect } from "./Rectangle.js";
-import { TextIcon } from "./TextIcon.js";
+import { Text } from "./Text.js";
 
 export class Button extends AbstractDrawable {
     constructor(x = null, y = null, w = null, h = null, text="", padding = 0) {
@@ -12,7 +12,7 @@ export class Button extends AbstractDrawable {
         this.textIconColor = COLOR.BLACK;
 
         this.buttonRect = new Rect(x, y, w, h, undefined, 5, false);
-        this.textIcon = new TextIcon(x + padding,y, w, h, text, this.textIconColor);
+        this.textIcon = new Text(x + padding,y, w, h, text, this.textIconColor);
     }
 
     DrawObject(screen) {

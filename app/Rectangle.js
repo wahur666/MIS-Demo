@@ -22,9 +22,6 @@ export class Rect extends AbstractDrawable {
     }
 
     IsInside(position) {
-        // console.log("DA POS",position);
-        // console.log("DA CORDS", this.x, this.y, this.w, this.h);
-        // console.log(this.x <= position[0] , this.x + this.w >= position[0], this.y <= position[1] , this.y + this.h >= position[1]);
         return this.x <= position[0] && this.x + this.w >= position[0] && this.y <= position[1] && this.y + this.h >= position[1];
     }
 

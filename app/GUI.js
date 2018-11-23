@@ -3,16 +3,19 @@ import { Button } from "./Button.js";
 import { Rect } from "./Rectangle.js";
 import { DrawRect } from "./SupportFunctions.js";
 import { Point } from "./Point.js";
+import { Edge } from "./Edge.js";
 
 const VERTEX = 0;
-const EDGE = 0;
+const EDGE = 1;
 const ADD = 0;
-const DELETE = 0;
+const DELETE = 1;
 
 export class GUI {
     constructor(application_core){
         this.application_core = application_core;
         this.items = [];
+        this.points = [];
+        this.edges = [];
         this.Initialize();
     }
 
@@ -24,7 +27,7 @@ export class GUI {
         this.canvas = this.application_core.canvas;
         this.screen = this.canvas.getContext("2d");
         this.canvasRect = this.canvas.getBoundingClientRect();
-
+        
         this.vertexButton = new Button(200, 20, 150, 50, "Vertex", 10);
         this.vertexButton.OnClick = this.SelectVertexOrEdge.bind(this, this.edgeButton);
         this.Add(this.vertexButton);
@@ -42,29 +45,54 @@ export class GUI {
         this.Add(this.deleteButton);
 
         this.demoButton = new Button(560, 20, 150, 50, "Demo", 17);
+        this.demoButton.OnClick = this.LoadDemo.bind(this);
         this.Add(this.demoButton);
 
         this.resetButton = new Button(740, 20, 150, 50, "Reset", 20);
+        this.resetButton.OnClick = this.ClearCanvas.bind(this);
         this.Add(this.resetButton);
 
-        this.mode = ADD;
-        this.selectMode = VERTEX;
+        this.modeAD = ADD;
+        this.modeVE = VERTEX;
         this.vertexButton.SelectThis();
         this.addButton.SelectThis();
+        this.pointCounter = 0;
+
+        this.point1 = null;
+        this.point2 = null;
 
     }
 
     DrawGUI(){
         DrawRect(this.screen, this.background_color, 0, 0, this.canvas.width, this.canvas.height, 0);
+        DrawRect(this.screen, COLOR.WHITE, 200, 100, this.canvas.width, this.canvas.height, 0);
         
         for (const element of this.items) {
             element.DrawObject(this.screen);
         }
 
+        
+        for (const edge of this.edges) {
+            edge.DrawObject(this.screen);
+        }
+        
+        for (const point of this.points) {
+            point.DrawObject(this.screen);
+        }
+        
+        
     }
 
     Add(item){
         this.items.push(item);
+    }
+
+    AddPoint(point) {
+        this.points.push(point);
+    }
+
+    AddEdge(edge) {
+        this.points.push(edge);
     }
 
     MouseHandler(event) {
@@ -86,52 +114,87 @@ export class GUI {
     KeyboardHandler(event) {
         if(event.type == "keyup") {
             if(event.key == "a") {
-                this.button_down.a = false;
-            }
-            if(event.key == "s") {
-                this.button_down.s = false;
-            }
-            if(event.key == "d") {
-                this.button_down.d = false;
-            }
-        } else {
-            if(event.key == "a") {
-                this.button_down.a = true;
-                this.button_down.s = false;
-                this.button_down.d = false;
-            }
-            if(event.key == "s") {
-                this.button_down.a = false;
-                this.button_down.s = true;
-                this.button_down.d = false;
-            }
-            if(event.key == "d") {
-                this.button_down.a = false;
-                this.button_down.s = false;
-                this.button_down.d = true;
+                this.modeAD = ADD;
+            } else if(event.key == "d") {
+                this.modeAD = DELETE;
+            } else if(event.key == "w") {
+                this.modeVE = VERTEX;
+            } else if(event.key == "e") {
+                this.modeVE = EDGE;
             }
         }
+        this.UpdateSelection();
     }
 
     OnDrag(event){ 
-        console.log(event);
-        for (const element of this.items) {
-
-        }
+        // PASS
     }
 
     OnRelease(event) {
         this.mouseDown = false;
-        for (const item of this.items) {
+        if(event.realpos[0] > 220 && 
+            event.realpos[1] > 120 && 
+            event.realpos[0] < this.canvas.width - 30 && 
+            event.realpos[1] < this.canvas.height - 30 ) {
 
-        }
-        console.log("REALEASE");
-        console.log("Realpos");
-        console.log(event.realpos);
-        if(event.realpos[0] > 220 && event.realpos[1] > 120) {
-            console.log("qweqwe");
-            var point = new Point(event.realpos[0], event.realpos[1]);
-            this.Add(point);
+            if(this.modeVE == VERTEX) {
+                if(this.modeAD == ADD) {
+                    if(!this.CoverOtherPoint(event.realpos)){
+                        var point = new Point(event.realpos[0], event.realpos[1], this.pointCounter);
+                        this.AddPoint(point);
+                        this.pointCounter += 1;
+                    }
+                } else {
+                    var marked = null;
+                    for (const point of this.points) {
+                        if(point.IsInside(event.realpos)) {
+                            point.DisconnectAllEdges();
+                            marked = point;
+                        }
+                    }
+                    if(marked) {
+                        this.points.remove(marked);
+                    }
+                }
+            } else {
+                if(this.modeAD == ADD) {
+                    for (const point of this.points) {
+                        if(point.IsInside(event.realpos)) {
+                            if(!this.point1) {
+                                point.SelectThis();
+                                this.point1 = point;
+                                break;
+                            } else {
+                                if(this.point1 == point) {
+                                    point.DeselectThis();
+                                    this.point1 = null;
+                                } else {
+                                    this.point2 = point;
+                                    this.point2.SelectThis();
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if(this.point1 && this.point2) {
+                        // Connect, createte edge
+                        var edge = new Edge(this.point1, this.point2);
+                        this.AddEdge(edge);
+                        this.point1.DeselectThis();
+                        this.point2.DeselectThis();
+                        this.point1 = null;
+                        this.point2 = null;
+                    }
+                } else {
+                    // Meg kell keresni a this.items listaban, van e valami pont
+                    // ami ezen a helyen van, ha van, akkor jeloljuk ki
+                    // ha mar ki van jelolve vegyuk le a jelolest
+                    // ha nincs kijelolve jeloljuk ki, es van mar egy kijelolt pont
+                    // toroljuk a ketto pont kozul az elt
+                }
+            }
+
+            
         }
     }
 
@@ -157,27 +220,72 @@ export class GUI {
         if(event == this.edgeButton) {
             this.edgeButton.SelectThis();
             this.vertexButton.DeselectThis();
-            this.selectMode = EDGE;
+            this.modeVE = EDGE;
         } else {
             this.vertexButton.SelectThis();
             this.edgeButton.DeselectThis();
-            this.selectMode = VERTEX;
+            this.modeVE = VERTEX;
         }
-        //console.log(this);
-        //console.log("QWEQWEQW")
-        //console.log(event); 
-
     }
 
     SelectMode(event) {
         if(event == this.addButton) {
             this.addButton.SelectThis();
             this.deleteButton.DeselectThis();
-            this.mode = ADD;
+            this.modeAD = ADD;
         } else {
             this.addButton.DeselectThis();
             this.deleteButton.SelectThis();
-            this.mode = DELETE;
+            this.modeAD = DELETE;
         }
+    }
+
+    UpdateSelection() {
+
+        if(this.modeVE == EDGE) {
+            this.edgeButton.SelectThis();
+            this.vertexButton.DeselectThis();
+        } else {
+            this.vertexButton.SelectThis();
+            this.edgeButton.DeselectThis();
+        }
+
+        if(this.modeAD == ADD) {
+            this.addButton.SelectThis();
+            this.deleteButton.DeselectThis();
+        } else {
+            this.addButton.DeselectThis();
+            this.deleteButton.SelectThis();
+        }
+    }
+
+    CoverOtherPoint(position) {
+        var top_left = [position[0] - 15, position[1] - 20];
+        var bottom_left = [position[0] - 15, position[1] + 30];
+
+        var top_right = [position[0] + 30, position[1] - 20];
+        var bottom_right = [position[0] + 30, position[1] + 30];
+
+        for (const point of this.points) {
+            if(point.IsInside(top_left) ||
+                point.IsInside(bottom_left) ||
+                point.IsInside(top_right) ||
+                point.IsInside(bottom_right)) {
+                    return true;
+                }
+        }
+
+        return false;
+    }
+
+    ClearCanvas() {
+        this.points = [];
+        this.edges = [];
+        this.pointCounter = 0;
+    }
+
+    LoadDemo() {
+        this.ClearCanvas();
+        // .... 
     }
 }

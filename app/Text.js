@@ -1,7 +1,7 @@
 import { AbstractDrawable } from "./AbstractDrawable.js";
 import {  COLOR } from "./Constants.js";
 
-export class TextIcon extends AbstractDrawable {
+export class Text extends AbstractDrawable {
 
     constructor(x = null, y = null, w = null, h = null, text = "", color = COLOR.BLACK) {
         super(x, y + h * 0.8, w, h);
@@ -31,6 +31,10 @@ export class TextIcon extends AbstractDrawable {
 
     SetColor(color) {
         this.color = color;
+    }
+
+    SetText(text) {
+        this.text;
     }
 
 }
