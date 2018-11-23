@@ -13,10 +13,14 @@ export class Point extends AbstractDrawable {
         this.degreeText = new Text(x + 15, y - 25, 20, 20, "0", undefined);
         this.edges = [];
         this.classification = 0;
+        this.partOfMis = false;
     }
 
     DrawObject(screen) {
         DrawCircle(screen, this.color, [this.x, this.y], 15, 0);
+        if(this.partOfMis){
+            DrawCircle(screen, COLOR.MAGENTA, [this.x, this.y], 15, 5);
+        }
         this.pointNameText.DrawObject(screen);
         this.degreeText.DrawObject(screen);
     }
@@ -86,5 +90,9 @@ export class Point extends AbstractDrawable {
     RemoveEdge(edge){
         this.edges.remove(edge);
         this.degreeText.SetText(this.edges.length);
+    }
+
+    SetPartOfMis(state) {
+        this.partOfMis = state;
     }
 }

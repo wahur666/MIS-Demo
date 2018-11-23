@@ -446,6 +446,12 @@ export class GUI {
         this.CreateEdge(p3, p8);
         this.CreateEdge(p4, p9);
         this.CreateEdge(p5, p10);
+
+        p1.SetPartOfMis(true);
+        p4.SetPartOfMis(true);
+        p7.SetPartOfMis(true);
+        p8.SetPartOfMis(true);
+
         
     }
 }
