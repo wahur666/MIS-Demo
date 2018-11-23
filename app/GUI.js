@@ -4,11 +4,19 @@ import { Rect } from "./Rectangle.js";
 import { DrawRect } from "./SupportFunctions.js";
 import { Point } from "./Point.js";
 import { Edge } from "./Edge.js";
+import { Text } from "./Text.js";
 
 const VERTEX = 0;
 const EDGE = 1;
+
 const ADD = 0;
 const DELETE = 1;
+
+const CLASS_HIGH = 3;
+const CLASS_HIGH_MED = 2;
+const CLASS_MED_LOW = 1;
+const CLASS_LOW = 0;
+
 
 export class GUI {
     constructor(application_core){
@@ -51,6 +59,25 @@ export class GUI {
         this.resetButton = new Button(740, 20, 150, 50, "Reset", 20);
         this.resetButton.OnClick = this.ClearCanvas.bind(this);
         this.Add(this.resetButton);
+
+        
+        this.lHighLabelText = new Text(20, 250, 20, 20, "L_high:");
+        this.Add(this.lHighLabelText);
+        this.lHighMedLabelText = new Text(20, 350, 20, 20, "L_high_medium:");
+        this.Add(this.lHighMedLabelText);
+        this.lMedLowLabelText = new Text(20, 450, 20, 20, "L_medium_low:");
+        this.Add(this.lMedLowLabelText);
+        this.lLowLabelText = new Text(20, 550, 20, 20, "L_low");
+        this.Add(this.lLowLabelText);
+
+        this.lHighText = new Text(20, 275, 20, 20, "[]");
+        this.Add(this.lHighText);
+        this.lHighMedText = new Text(20, 375, 20, 20, "[]");
+        this.Add(this.lHighMedText);
+        this.lMedLowText = new Text(20, 475, 20, 20, "[]");
+        this.Add(this.lMedLowText);
+        this.lLowText = new Text(20, 575, 450, 20, "[]");
+        this.Add(this.lLowText);
 
         this.ClearCanvas();
 
@@ -129,11 +156,11 @@ export class GUI {
             event.realpos[1] < this.canvas.height - 30 ) {
 
             if(this.modeVE == VERTEX) {
-                if(this.modeAD == ADD) {
+                if(this.modeAD == ADD) { // VERTEX + ADD
                     if(!this.CoverOtherPoint(event.realpos)){
                         this.CreatePoint(...event.realpos);
                     }
-                } else {
+                } else {  // VERTEX + DELETE
                     var marked = null;
                     for (const point of this.points) {
                         if(point.IsInside(event.realpos)) {
@@ -146,10 +173,11 @@ export class GUI {
                     }
                     if(marked) {
                         this.points.remove(marked);
+                        this.ReclassifyAllPoints();
                     }
                 }
-            } else {
-                if(this.modeAD == ADD) {
+            } else { 
+                if(this.modeAD == ADD) {  // EDGE + ADD
                     for (const point of this.points) {
                         if(point.IsInside(event.realpos)) {
                             if(!this.point1) {
@@ -175,7 +203,7 @@ export class GUI {
                         this.point1 = null;
                         this.point2 = null;
                     }
-                } else {
+                } else {  // EDGE + DELETE
                     for (const point of this.points) {
                         if(point.IsInside(event.realpos)) {
                             if(!this.point1) {
@@ -198,6 +226,7 @@ export class GUI {
                         var edge = this.point1.DisconnectEdge(this.point2);
                         if(edge) {
                             this.edges.remove(edge);
+                            this.ReclassifyAllPoints();
                         }
                         this.point1.DeselectThis();
                         this.point2.DeselectThis();
@@ -208,14 +237,6 @@ export class GUI {
             }
 
             
-        }
-    }
-
-    CreateEdge(p1, p2) {
-        var edge = new Edge(p1, p2);
-        if (p1.AddEdge(edge)) {
-            this.AddEdge(edge);
-            p2.AddEdge(edge);
         }
     }
 
@@ -308,6 +329,15 @@ export class GUI {
         this.modeAD = ADD;
         this.modeVE = VERTEX;
         this.pointCounter = 0;
+
+        this.highArr=  [];
+        this.highMedArr= [];
+        this.medLowArr= [];
+        this.lowArr = [];
+
+        this.UpdateClassArrayTexts();
+
+        this.lHighText.SetText("[]");
         this.UpdateSelection();
     }
 
@@ -316,6 +346,68 @@ export class GUI {
         this.AddPoint(point);
         this.pointCounter += 1;
         return point;
+    }
+
+    CreateEdge(p1, p2) {
+        var edge = new Edge(p1, p2);
+        if (p1.AddEdge(edge)) {
+            p2.AddEdge(edge);
+            this.AddEdge(edge);
+        }
+        
+        this.ReclassifyAllPoints();
+    }
+
+    UpdateClassArrayTexts() {
+        this.lHighText.SetText("["+ this.highArr.join(", ") + "]");
+        this.lHighMedText.SetText("["+ this.highMedArr.join(", ") + "]");
+        this.lMedLowText.SetText("["+ this.medLowArr.join(", ") + "]");
+        this.lLowText.SetText("["+ this.lowArr.join(", ") + "]");
+    }
+
+    ClassifyPoint(point) {
+        var m = this.edges.length;
+        var degV = point.GetDegree();
+
+        var highValue = m ** 0.75;
+        var medValue = m ** 0.5;
+        var lowValue = m ** 0.25; 
+
+        if(degV >= highValue) {
+            point.SetClassification(CLASS_HIGH);
+        } else if ( highValue > degV && degV >= medValue) {
+            point.SetClassification(CLASS_HIGH_MED);
+        } else if ( medValue > degV && degV >= lowValue ) {
+            point.SetClassification(CLASS_MED_LOW);
+        } else {
+            point.SetClassification(CLASS_LOW);
+        }
+    }
+
+    ReclassifyAllPoints() {
+        for (const point of this.points) {
+            this.ClassifyPoint(point);
+        }
+        this.RecollectClassArrays();
+    }
+
+    RecollectClassArrays() {
+        this.highArr = [];
+        this.highMedArr = [];
+        this.medLowArr = [];
+        this.lowArr = [];
+        for (const point of this.points) {
+            if(point.classification == CLASS_HIGH) {
+                this.highArr.push(point.text);
+            } else if (point.classification == CLASS_HIGH_MED) {
+                this.highMedArr.push(point.text);
+            } else if (point.classification == CLASS_MED_LOW) {
+                this.medLowArr.push(point.text);
+            } else {
+                this.lowArr.push(point.text);
+            }
+        }
+        this.UpdateClassArrayTexts();
     }
 
     LoadDemo() {

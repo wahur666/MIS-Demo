@@ -12,6 +12,7 @@ export class Point extends AbstractDrawable {
         this.pointNameText = new Text(x + this.diagDelta, y + this.diagDelta, 20, 20, this.text, undefined);
         this.degreeText = new Text(x + 15, y - 25, 20, 20, "0", undefined);
         this.edges = [];
+        this.classification = 0;
     }
 
     DrawObject(screen) {
@@ -24,8 +25,12 @@ export class Point extends AbstractDrawable {
         return this.x - 15 <= position[0] && this.x + 30 >= position[0] && this.y - 20 <= position[1] && this.y + 30 >= position[1];
     }
 
-    SetDegree(num) {
-        this.degreeText.SetText(num);
+    GetDegree() {
+        return this.edges.length;
+    }
+
+    SetClassification(num) {
+        this.classification = num;
     }
 
     DisconnectEdge(point) {
