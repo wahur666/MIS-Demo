@@ -131,9 +131,7 @@ export class GUI {
             if(this.modeVE == VERTEX) {
                 if(this.modeAD == ADD) {
                     if(!this.CoverOtherPoint(event.realpos)){
-                        var point = new Point(event.realpos[0], event.realpos[1], this.pointCounter);
-                        this.AddPoint(point);
-                        this.pointCounter += 1;
+                        this.CreatePoint(...event.realpos);
                     }
                 } else {
                     var marked = null;
@@ -171,11 +169,7 @@ export class GUI {
                         }
                     }
                     if(this.point1 && this.point2) {
-                        var edge = new Edge(this.point1, this.point2);
-                        if(this.point1.AddEdge(edge)) {
-                            this.AddEdge(edge);
-                            this.point2.AddEdge(edge);
-                        }
+                        this.CreateEdge(this.point1, this.point2);
                         this.point1.DeselectThis();
                         this.point2.DeselectThis();
                         this.point1 = null;
@@ -214,6 +208,14 @@ export class GUI {
             }
 
             
+        }
+    }
+
+    CreateEdge(p1, p2) {
+        var edge = new Edge(p1, p2);
+        if (p1.AddEdge(edge)) {
+            this.AddEdge(edge);
+            p2.AddEdge(edge);
         }
     }
 
@@ -309,8 +311,49 @@ export class GUI {
         this.UpdateSelection();
     }
 
+    CreatePoint(x, y) {
+        var point = new Point(x, y, this.pointCounter);
+        this.AddPoint(point);
+        this.pointCounter += 1;
+        return point;
+    }
+
     LoadDemo() {
         this.ClearCanvas();
         // Petersen Graf lesz itt
+
+        // Kulso 5szog
+        var p1 = this.CreatePoint(700, 140);
+        var p2 = this.CreatePoint(980, 345);
+        var p3 = this.CreatePoint(870,675);
+        var p4 = this.CreatePoint(525, 675);
+        var p5 = this.CreatePoint(420, 340);
+
+
+        // Belso 5szog
+        var p6 = this.CreatePoint(700, 260);
+        var p7 = this.CreatePoint(875, 385);
+        var p8 = this.CreatePoint(810, 590);
+        var p9 = this.CreatePoint(595, 590);
+        var p10 = this.CreatePoint(525, 390);
+
+        this.CreateEdge(p1, p2);
+        this.CreateEdge(p2, p3);
+        this.CreateEdge(p3, p4);
+        this.CreateEdge(p4, p5);
+        this.CreateEdge(p5, p1);
+
+        this.CreateEdge(p6, p8);
+        this.CreateEdge(p7, p9);
+        this.CreateEdge(p8, p10);
+        this.CreateEdge(p9, p6);
+        this.CreateEdge(p10, p7);
+
+        this.CreateEdge(p1, p6);
+        this.CreateEdge(p2, p7);
+        this.CreateEdge(p3, p8);
+        this.CreateEdge(p4, p9);
+        this.CreateEdge(p5, p10);
+        
     }
 }
