@@ -34,7 +34,7 @@ export class Text extends AbstractDrawable {
     }
 
     SetText(text) {
-        this.text;
+        this.text = text;
     }
 
 }

@@ -28,8 +28,30 @@ export class Point extends AbstractDrawable {
         this.degreeText.SetText(num);
     }
 
-    DisconnectAllEdges() {
+    DisconnectEdge(point) {
+        for (const edge of this.edges) {
+            if(edge.point1 == point) {
+                edge.point1.RemoveEdge(edge);
+                this.RemoveEdge(edge);
+                return edge;
+            } else if (edge.point2 == point) {
+                edge.point2.RemoveEdge(edge);
+                this.RemoveEdge(edge);
+                return edge;
+            }
+        }
+        return null;
+    }
 
+    DisconnectAllEdges() {
+        for (const edge of this.edges) {
+            if(edge.point1 != this) {
+                edge.point1.RemoveEdge(edge);
+            } else {
+                edge.point2.RemoveEdge(edge);
+            }
+        }
+        return this.edges;
     }
 
     SelectThis() {
@@ -44,4 +66,20 @@ export class Point extends AbstractDrawable {
         return [this.x, this.y];
     }
 
+    AddEdge(edge) {
+        for (const e of this.edges) {
+            if(edge.point1 == e.point1 && edge.point2 == e.point2 ||
+                edge.point1 == e.point2 && edge.point2 == e.point1) {
+                    return false;
+                }
+        }
+        this.edges.push(edge);
+        this.degreeText.SetText(this.edges.length);
+        return true;
+    }
+
+    RemoveEdge(edge){
+        this.edges.remove(edge);
+        this.degreeText.SetText(this.edges.length);
+    }
 }

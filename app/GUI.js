@@ -52,14 +52,7 @@ export class GUI {
         this.resetButton.OnClick = this.ClearCanvas.bind(this);
         this.Add(this.resetButton);
 
-        this.modeAD = ADD;
-        this.modeVE = VERTEX;
-        this.vertexButton.SelectThis();
-        this.addButton.SelectThis();
-        this.pointCounter = 0;
-
-        this.point1 = null;
-        this.point2 = null;
+        this.ClearCanvas();
 
     }
 
@@ -71,7 +64,6 @@ export class GUI {
             element.DrawObject(this.screen);
         }
 
-        
         for (const edge of this.edges) {
             edge.DrawObject(this.screen);
         }
@@ -79,7 +71,6 @@ export class GUI {
         for (const point of this.points) {
             point.DrawObject(this.screen);
         }
-        
         
     }
 
@@ -92,7 +83,7 @@ export class GUI {
     }
 
     AddEdge(edge) {
-        this.points.push(edge);
+        this.edges.push(edge);
     }
 
     MouseHandler(event) {
@@ -148,7 +139,10 @@ export class GUI {
                     var marked = null;
                     for (const point of this.points) {
                         if(point.IsInside(event.realpos)) {
-                            point.DisconnectAllEdges();
+                            var edges = point.DisconnectAllEdges();
+                            for (const edge of edges) {
+                                this.edges.remove(edge);
+                            }
                             marked = point;
                         }
                     }
@@ -177,20 +171,45 @@ export class GUI {
                         }
                     }
                     if(this.point1 && this.point2) {
-                        // Connect, createte edge
                         var edge = new Edge(this.point1, this.point2);
-                        this.AddEdge(edge);
+                        if(this.point1.AddEdge(edge)) {
+                            this.AddEdge(edge);
+                            this.point2.AddEdge(edge);
+                        }
                         this.point1.DeselectThis();
                         this.point2.DeselectThis();
                         this.point1 = null;
                         this.point2 = null;
                     }
                 } else {
-                    // Meg kell keresni a this.items listaban, van e valami pont
-                    // ami ezen a helyen van, ha van, akkor jeloljuk ki
-                    // ha mar ki van jelolve vegyuk le a jelolest
-                    // ha nincs kijelolve jeloljuk ki, es van mar egy kijelolt pont
-                    // toroljuk a ketto pont kozul az elt
+                    for (const point of this.points) {
+                        if(point.IsInside(event.realpos)) {
+                            if(!this.point1) {
+                                point.SelectThis();
+                                this.point1 = point;
+                                break;
+                            } else {
+                                if(this.point1 == point) {
+                                    point.DeselectThis();
+                                    this.point1 = null;
+                                } else {
+                                    this.point2 = point;
+                                    this.point2.SelectThis();
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if(this.point1 && this.point2) {
+                        var edge = this.point1.DisconnectEdge(this.point2);
+                        if(edge) {
+                            this.edges.remove(edge);
+                        }
+                        this.point1.DeselectThis();
+                        this.point2.DeselectThis();
+                        this.point1 = null;
+                        this.point2 = null;
+                    }
                 }
             }
 
@@ -218,26 +237,20 @@ export class GUI {
 
     SelectVertexOrEdge(event) {
         if(event == this.edgeButton) {
-            this.edgeButton.SelectThis();
-            this.vertexButton.DeselectThis();
             this.modeVE = EDGE;
         } else {
-            this.vertexButton.SelectThis();
-            this.edgeButton.DeselectThis();
             this.modeVE = VERTEX;
         }
+        this.UpdateSelection();
     }
 
     SelectMode(event) {
         if(event == this.addButton) {
-            this.addButton.SelectThis();
-            this.deleteButton.DeselectThis();
             this.modeAD = ADD;
         } else {
-            this.addButton.DeselectThis();
-            this.deleteButton.SelectThis();
             this.modeAD = DELETE;
         }
+        this.UpdateSelection();
     }
 
     UpdateSelection() {
@@ -256,6 +269,15 @@ export class GUI {
         } else {
             this.addButton.DeselectThis();
             this.deleteButton.SelectThis();
+        }
+
+        if(this.point1) {
+            this.point1.DeselectThis();
+            this.point1 = null;
+        }
+        if(this.point2) {
+            this.point2.DeselectThis();
+            this.point2 = null;
         }
     }
 
@@ -281,11 +303,14 @@ export class GUI {
     ClearCanvas() {
         this.points = [];
         this.edges = [];
+        this.modeAD = ADD;
+        this.modeVE = VERTEX;
         this.pointCounter = 0;
+        this.UpdateSelection();
     }
 
     LoadDemo() {
         this.ClearCanvas();
-        // .... 
+        // Petersen Graf lesz itt
     }
 }

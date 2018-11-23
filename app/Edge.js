@@ -10,7 +10,7 @@ export class Edge extends AbstractDrawable {
     }
 
     DrawObject(screen) {
-        DrawLine(screen, COLOR.GREY, this.point1.Center(), this.point2.Center(), 5);
+        DrawLine(screen, COLOR.RED, this.point1.Center(), this.point2.Center(), 5);
     }
 
 }
