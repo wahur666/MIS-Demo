@@ -14,6 +14,7 @@ export class Point extends AbstractDrawable {
         this.edges = [];
         this.classification = 0;
         this.partOfMis = false;
+        this.neighbors = [];
     }
 
     DrawObject(screen) {
@@ -83,6 +84,11 @@ export class Point extends AbstractDrawable {
                 }
         }
         this.edges.push(edge);
+        if(edge.point1 == this) {
+            this.neighbors.push(edge.point2);
+        } else {
+            this.neighbors.push(edge.point1);
+        }
         this.degreeText.SetText(this.edges.length);
         return true;
     }
@@ -94,5 +100,21 @@ export class Point extends AbstractDrawable {
 
     SetPartOfMis(state) {
         this.partOfMis = state;
+    }
+
+    IsPartOfMis() {
+        return this.partOfMis();
+    }
+
+    NeighborPoints() {
+        return this.neighbors;
+    }
+
+    NeighborsDegree() {
+        var neighborsDegree = [];
+        for (const point of this.neighbors) {
+            neighborsDegree.push(point.GetDegree());
+        }
+        return neighborsDegree;
     }
 }
