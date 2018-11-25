@@ -420,9 +420,9 @@ export class GUI {
                     }
                 } else {
                     // TODO
-                    var L_mis = [];
-                    var L_1hop = L.filter((x) => x.MIS_neighbors() == 0);
-                    var L_2hop = [];
+                    //var L_mis = [];
+                    //var L_1hop = L.filter((x) => x.MIS_neighbors() == 0);
+                    //var L_2hop = [];
                 }
             }
         }
@@ -529,7 +529,13 @@ export class GUI {
     ChangeMis(event) {
         for (const point of this.points) {
             if (point.IsInside(event.realpos)) {
-                point.SetPartOfMis(!point.IsPartOfMis());
+                if(!point.IsPartOfMis()) {
+                    if(!point.neighbors.some(x=>x.IsPartOfMis() == true)) {
+                        point.SetPartOfMis(true);
+                    }
+                } else {
+                    point.SetPartOfMis(false);
+                }
             }
         }
     }
