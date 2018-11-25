@@ -1,0 +1,19 @@
+body {
+    overflow: hidden;
+}
+
+
+.center {
+    text-align: center;
+}
+
+canvas {
+    border: 1px black solid;
+
+}
+
+div {
+    width: 100%;
+    height: 100%;
+}
+
