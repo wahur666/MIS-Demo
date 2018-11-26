@@ -437,7 +437,7 @@ export class GUI {
                     var l_2hop = L_2hop.length;
 
                     if(l_2hop <= 4 * this.edges.length ** 0.75) {
-                        for (const point of l_2hop) {
+                        for (const point of L_2hop) {
                             if(point.MIS_neighbors == 0) {
                                 L_1hop.push(point);
                             }
@@ -457,7 +457,7 @@ export class GUI {
                             }
                         } else {
                             // 1/b eset implementalasa
-                            for (const p1 of L) {
+                            for (const p1 of L_1hop) {
                                 var arr_to_check = p1.mis_neighbors.splice();
                                 while (arr_to_check.length > 0) {
                                     var marked = [];
