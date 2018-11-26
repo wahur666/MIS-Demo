@@ -23,6 +23,7 @@ export class Point extends AbstractDrawable {
         this.mis_neighbors = [];
         this.unique_2hop_neighbors = [];
         this.mis_2hop_neighbors = [];
+        this.real_mis_neighbors = [];
     }
 
     DrawObject(screen) {
@@ -125,6 +126,20 @@ export class Point extends AbstractDrawable {
         }
         return neighborsDegree;
     }
+
+    Calculate_Real_MIS_neighbors() {
+        this.real_mis_neighbors = [];
+        for (const point of this.neighbors) {
+            if(point.IsPartOfMis()){
+                this.real_mis_neighbors.push(point);
+            }
+        }
+    }
+
+    Real_MIS_Neighbors() {
+        return this.real_mis_neighbors.length;
+    }
+
 
     Calculate_MIS_neighbors() {
         this.mis_neighbors = [];

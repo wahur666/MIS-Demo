@@ -412,20 +412,86 @@ export class GUI {
        if(p1.IsPartOfMis() && p2.IsPartOfMis()) {
             p1.SetPartOfMis(false);
             p2.SetPartOfMis(true);
-            var L = new Set(p1.neighbors.filter((x) => x.classification == CLASS_LOW));
+            var L = [...(new Set(p1.neighbors.filter((x) => x.classification == CLASS_LOW)))];
             for (const w of p1.neighbors) {
-                if(!L.has(w)) {
+                if(!L.includes(w)) {
                     if(w.MIS_neighbors() == 0) {
                         w.SetPartOfMis(true);
                     }
                 } else {
-                    // TODO
-                    //var L_mis = [];
-                    //var L_1hop = L.filter((x) => x.MIS_neighbors() == 0);
-                    //var L_2hop = [];
+                    var L_mis =  []; // L.filter((x) => x.Real_MIS_Neighbors() == 0);
+                    var L_1hop = []; // L.filter((x) => x.MIS_neighbors() == 0);
+                    
+                    // Itt kellene segitseg, hogy ez helyes-e
+                    var L_2hop =  L.filter((x) => x.MIS_2hop_neighbors() == 0);
+
+                    var l_mis = L_mis.length;
+                    var l_1hop = L_1hop.length;
+                    var l_2hop = L_2hop.length;
+
+                    if(l_2hop <= 4 * m ** 0.75) {
+                        for (const point of l_2hop) {
+                            if(point.MIS_neighbors == 0) {
+                                L_1hop.push(point);
+                            }
+                        }
+
+
+                        if(l_1hop <= 4 * m ** 0.5) {
+                            for (const point of L_1hop) {
+                                if(point.MIS_neighbors == 0) {
+                                    L_mis.push(point);
+                                }
+                            }
+                            for (const point of L_mis) {
+                                point.SetPartOfMis(true);
+                            }
+                        } else {
+                            // 1/b eset implementalasa
+                            for (const p1 of L) {
+                                var arr_to_check = p1.real_mis_neighbors.splice();
+                                while (arr_to_check.length > 0) {
+                                    var marked = [];
+                                    for (const point of arr_to_check) {
+                                        if(point.classification == CLASS_HIGH &&
+                                            point.Real_MIS_Neighbors() != 0) {
+                                                marked.push(point);
+                                            }
+                                    }
+                                    for (const point of t_marked) {
+                                        point.SetPartOfMis(false);
+                                    }
+                                    arr_to_check = marked.splice();
+                                }
+                            }
+
+                        }
+                    } else {
+                        for (const point of L_2hop) {
+                            if(point.real_mis_neighbors == 0) {
+                                point.SetPartOfMis(true);
+                            }
+                        }
+                    }
+                    
+
                 }
             }
         }
+    }
+
+    CalculateL2hop(L){
+        var unique_neighbors = new Set();
+        for (const p of L) {
+            for (const p1 of p.neighbors) {
+                for (const p2 of p1.neighbors) {
+                    if(p2.MIS_neighbors() == 0) {
+                        unique_neighbors.add(p2);
+                    }
+                }
+            }
+        }
+        return Array.from(unique_neighbors);
     }
 
     CalculateMISAfterEdgeRemove(p1, p2) {
