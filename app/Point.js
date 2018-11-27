@@ -47,15 +47,30 @@ export class Point extends AbstractDrawable {
         this.classification = num;
     }
 
+    RecollectNeighbors() {
+        this.neighbors = [];
+        for (const edge of this.edges) {
+            if(edge.point1 == this) {
+                this.neighbors.push(edge.point2);
+            } else {
+                this.neighbors.push(edge.point1);
+            }
+        }
+    }
+
     DisconnectEdge(point) {
         for (const edge of this.edges) {
             if(edge.point1 == point) {
                 edge.point1.RemoveEdge(edge);
+                edge.point1.RecollectNeighbors();
                 this.RemoveEdge(edge);
+                this.RecollectNeighbors();
                 return edge;
             } else if (edge.point2 == point) {
                 edge.point2.RemoveEdge(edge);
+                edge.point2.RecollectNeighbors();
                 this.RemoveEdge(edge);
+                this.RecollectNeighbors();
                 return edge;
             }
         }
@@ -109,6 +124,11 @@ export class Point extends AbstractDrawable {
 
     SetPartOfMis(state) {
         this.partOfMis = state;
+        if(state) {
+            for (const point of this.neighbors) {
+                point.Calculate_MIS_neighbors();
+            }
+        }
     }
 
     IsPartOfMis() {

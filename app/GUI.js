@@ -523,50 +523,34 @@ export class GUI {
     }
 
     CalculateMISAfterEdgeRemove(p1, p2) {
+        p1.Calculate_MIS_neighbors();
+        p2.Calculate_MIS_neighbors();
         if(!p1.IsPartOfMis() && !p2.IsPartOfMis()) {
             // PASS
         } else if (p1.IsPartOfMis() && !p2.IsPartOfMis()) {
-            if(p2.MIS_neighbors() != 0) {
-                // PASS
-            } else {
-                if(p2.classification != CLASS_LOW) {
-                    // PASS
-                } else {
-                    var flag = false;
-                    for (const neighbor of p2.neighbors) {
-                        if(neighbor.IsPartOfMis()) {
-                            flag = true;
-                            break;
-                        }
+            if(p2.MIS_neighbors() == 0 && p2.classification == CLASS_LOW) {
+                var flag = false;
+                for (const neighbor of p2.neighbors) {
+                    if(neighbor.IsPartOfMis()) {
+                        flag = true;
+                        break;
                     }
-                    if(flag) {
-                        // PASS
-                    } else {
-                        this.maximumIndependentSet.push(p2);
-                        p2.SetPartOfMis(true);
-                    }
+                }
+                if(!flag) {
+                    p2.SetPartOfMis(true);
                 }
             }
         } else if (!p1.IsPartOfMis() && p2.IsPartOfMis()) {
-            if(p1.MIS_neighbors() != 0) {
-                // PASS
-            } else {
-                if(p1.classification != CLASS_LOW) {
-                    // PASS
-                } else {
-                    var flag = false;
-                    for (const neighbor of p1.neighbors) {
-                        if(neighbor.IsPartOfMis()) {
-                            flag = true;
-                            break;
-                        }
+            if(p1.MIS_neighbors() == 0 && p1.classification == CLASS_LOW) {
+                var flag = false;
+                for (const neighbor of p1.neighbors) {
+                    if(neighbor.IsPartOfMis()) {
+                        flag = true;
+                        break;
                     }
-                    if(flag) {
-                        // PASS
-                    } else {
-                        this.maximumIndependentSet.push(p1);
-                        p1.SetPartOfMis(true);
-                    }
+                }
+                if(!flag) {
+                    p1.SetPartOfMis(true);
                 }
             }
         }
