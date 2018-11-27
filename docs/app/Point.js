@@ -3,6 +3,11 @@ import { COLOR } from "./Constants.js";
 import { DrawCircle } from "./SupportFunctions.js";
 import { Text } from "./Text.js";
 
+const CLASS_HIGH = 3;
+const CLASS_HIGH_MED = 2;
+const CLASS_MED_LOW = 1;
+const CLASS_LOW = 0;
+
 export class Point extends AbstractDrawable {
     constructor(x = null, y = null, num = null) {
         super(x, y, 0, 0);
@@ -15,6 +20,10 @@ export class Point extends AbstractDrawable {
         this.classification = 0;
         this.partOfMis = false;
         this.neighbors = [];
+        this.mis_neighbors = [];
+        this.unique_2hop_neighbors = [];
+        this.mis_2hop_neighbors = [];
+        this.real_mis_neighbors = [];
     }
 
     DrawObject(screen) {
@@ -38,15 +47,30 @@ export class Point extends AbstractDrawable {
         this.classification = num;
     }
 
+    RecollectNeighbors() {
+        this.neighbors = [];
+        for (const edge of this.edges) {
+            if(edge.point1 == this) {
+                this.neighbors.push(edge.point2);
+            } else {
+                this.neighbors.push(edge.point1);
+            }
+        }
+    }
+
     DisconnectEdge(point) {
         for (const edge of this.edges) {
             if(edge.point1 == point) {
                 edge.point1.RemoveEdge(edge);
+                edge.point1.RecollectNeighbors();
                 this.RemoveEdge(edge);
+                this.RecollectNeighbors();
                 return edge;
             } else if (edge.point2 == point) {
                 edge.point2.RemoveEdge(edge);
+                edge.point2.RecollectNeighbors();
                 this.RemoveEdge(edge);
+                this.RecollectNeighbors();
                 return edge;
             }
         }
@@ -100,10 +124,15 @@ export class Point extends AbstractDrawable {
 
     SetPartOfMis(state) {
         this.partOfMis = state;
+        if(state) {
+            for (const point of this.neighbors) {
+                point.Calculate_MIS_neighbors();
+            }
+        }
     }
 
     IsPartOfMis() {
-        return this.partOfMis();
+        return this.partOfMis;
     }
 
     NeighborPoints() {
@@ -118,14 +147,90 @@ export class Point extends AbstractDrawable {
         return neighborsDegree;
     }
 
-    MIS_neighbors() {
-        counter = 0
+    Calculate_Real_MIS_neighbors() {
+        this.real_mis_neighbors = [];
         for (const point of this.neighbors) {
-            if(point.IsPartOfMis()) {
-                counter += 1;
+            if(point.IsPartOfMis()){
+                this.real_mis_neighbors.push(point);
             }
         }
     }
 
-    
+    Real_MIS_Neighbors() {
+        return this.real_mis_neighbors.length;
+    }
+
+
+    Calculate_MIS_neighbors() {
+        this.mis_neighbors = [];
+        if(this.classification != CLASS_LOW) { 
+            for (const point of this.neighbors) {
+                if(point.IsPartOfMis()) {
+                    this.mis_neighbors.push(point);
+                }
+            }
+        } else { // Low
+            for (const point of this.neighbors) {
+                if(point.IsPartOfMis() && point.classification != CLASS_HIGH) {
+                    this.mis_neighbors.push(point);
+                }
+            }
+        }
+    }
+
+    MIS_neighbors() {
+        return this.mis_neighbors.length;
+    }
+
+    Calculate_MIS_2hop_neighbors() {
+        this.mis_2hop_neighbors = [];
+        this.CollectUnique2HopNeighbors();
+        for (const point of this.unique_2hop_neighbors) {
+            if(point.IsPartOfMis() && 
+                    (point.classification == CLASS_LOW || 
+                     point.classification == CLASS_MED_LOW )) {
+                this.mis_2hop_neighbors.push(point);
+            }
+        }
+    }
+
+    CollectUnique2HopNeighbors() {
+        this.unique_2hop_neighbors = new Set();
+        for (const point of this.neighbors) {
+            for (const neighbor in point.NeighborPoints()) {
+                unique_2hop_neighbors.add(neighbor);
+            }
+        }
+    }
+
+    MIS_2hop_neighbors() {
+        this.mis_2hop_neighbors.length;
+    }
+
+    UpdateNeighborsAlgo() {
+        for (const point of this.neighbors) {
+            if(this.classification == CLASS_HIGH) {
+                if(point.classification != CLASS_LOW) {
+                    point.Calculate_MIS_neighbors();
+                }
+            } else {
+                point.Calculate_MIS_neighbors();
+            }
+        }
+    }
+
+    Update2HopNeighborsAlgo() {
+        for (const point of this.neighbors) {
+            if(this.classification == CLASS_LOW ||
+                this.classification == CLASS_MED_LOW) {
+                    if(point.classification == CLASS_LOW) {
+                        for (const point_2hop of point.neighbor) {
+                            point_2hop.Calculate_MIS_neighbors();
+                        }
+                    } else {
+                        point.Calculate_MIS_2hop_neighbors();
+                    }
+                }
+        }
+    }
 }

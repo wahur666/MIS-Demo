@@ -11,6 +11,7 @@ const EDGE = 1;
 
 const ADD = 0;
 const DELETE = 1;
+const MIS = 2;
 
 const CLASS_HIGH = 3;
 const CLASS_HIGH_MED = 2;
@@ -52,6 +53,10 @@ export class GUI {
         this.deleteButton.OnClick = this.SelectMode.bind(this, this.deleteButton);
         this.Add(this.deleteButton);
 
+        this.misButton = new Button(20, 20, 150, 50, "MIS", 35);
+        this.misButton.OnClick = this.SelectMode.bind(this, this.misButton);
+        this.Add(this.misButton);
+
         this.demoButton = new Button(560, 20, 150, 50, "Demo", 17);
         this.demoButton.OnClick = this.LoadDemo.bind(this);
         this.Add(this.demoButton);
@@ -88,6 +93,9 @@ export class GUI {
         DrawRect(this.screen, COLOR.WHITE, 200, 100, this.canvas.width, this.canvas.height, 0);
         
         for (const element of this.items) {
+            if(this.modeVE == EDGE && element == this.misButton) {
+                continue;
+            }
             element.DrawObject(this.screen);
         }
 
@@ -139,6 +147,8 @@ export class GUI {
                 this.modeVE = VERTEX;
             } else if(event.key == "e") {
                 this.modeVE = EDGE;
+            } else if(event.key == "m") {
+                this.modeAD = MIS;
             }
         }
         this.UpdateSelection();
@@ -157,86 +167,114 @@ export class GUI {
 
             if(this.modeVE == VERTEX) {
                 if(this.modeAD == ADD) { // VERTEX + ADD
-                    if(!this.CoverOtherPoint(event.realpos)){
-                        this.CreatePoint(...event.realpos);
-                    }
+                    this.AddVertex(event);
+                } else if (this.modeAD == MIS) {
+                    this.ChangeMis(event);
                 } else {  // VERTEX + DELETE
-                    var marked = null;
-                    for (const point of this.points) {
-                        if(point.IsInside(event.realpos)) {
-                            var edges = point.DisconnectAllEdges();
-                            for (const edge of edges) {
-                                this.edges.remove(edge);
-                            }
-                            marked = point;
-                        }
-                    }
-                    if(marked) {
-                        this.points.remove(marked);
-                        this.ReclassifyAllPoints();
-                    }
+                    this.DeleteVertex(event);
                 }
             } else { 
                 if(this.modeAD == ADD) {  // EDGE + ADD
-                    for (const point of this.points) {
-                        if(point.IsInside(event.realpos)) {
-                            if(!this.point1) {
-                                point.SelectThis();
-                                this.point1 = point;
-                                break;
-                            } else {
-                                if(this.point1 == point) {
-                                    point.DeselectThis();
-                                    this.point1 = null;
-                                } else {
-                                    this.point2 = point;
-                                    this.point2.SelectThis();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    if(this.point1 && this.point2) {
-                        this.CreateEdge(this.point1, this.point2);
-                        this.point1.DeselectThis();
-                        this.point2.DeselectThis();
-                        this.point1 = null;
-                        this.point2 = null;
-                    }
+                    this.AddEdgeToGraph(event);
                 } else {  // EDGE + DELETE
-                    for (const point of this.points) {
-                        if(point.IsInside(event.realpos)) {
-                            if(!this.point1) {
-                                point.SelectThis();
-                                this.point1 = point;
-                                break;
-                            } else {
-                                if(this.point1 == point) {
-                                    point.DeselectThis();
-                                    this.point1 = null;
-                                } else {
-                                    this.point2 = point;
-                                    this.point2.SelectThis();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    if(this.point1 && this.point2) {
-                        var edge = this.point1.DisconnectEdge(this.point2);
-                        if(edge) {
-                            this.edges.remove(edge);
-                            this.ReclassifyAllPoints();
-                        }
-                        this.point1.DeselectThis();
-                        this.point2.DeselectThis();
-                        this.point1 = null;
-                        this.point2 = null;
-                    }
+                    this.DeleteEdgeFromGraph(event);
                 }
             }
 
             
+        }
+    }
+
+    AddVertex(event) {
+        if (!this.CoverOtherPoint(event.realpos)) {
+            this.CreatePoint(...event.realpos);
+        }
+    }
+
+    DeleteVertex(event) {
+        var marked = null;
+        for (const point of this.points) {
+            if (point.IsInside(event.realpos)) {
+                var otherPoint = null;
+                var edges = point.DisconnectAllEdges();
+                for (const edge of edges) {
+                    if(edge.point1 == point) {
+                        this.ClassifyPoint(edge.point2);
+                        otherPoint = edge.point2;
+                    } else {
+                        this.ClassifyPoint(edge.point1);
+                        otherPoint = edge.point1;
+                    }
+                    this.edges.remove(edge);
+                    this.CalculateMISAfterEdgeRemove(point, otherPoint);
+                }
+                marked = point;
+            }
+        }
+        if (marked) {
+            this.points.remove(marked);
+        }
+    }
+
+    AddEdgeToGraph(event) {
+        for (const point of this.points) {
+            if(point.IsInside(event.realpos)) {
+                if(!this.point1) {
+                    point.SelectThis();
+                    this.point1 = point;
+                    break;
+                } else {
+                    if(this.point1 == point) {
+                        point.DeselectThis();
+                        this.point1 = null;
+                    } else {
+                        this.point2 = point;
+                        this.point2.SelectThis();
+                    }
+                    break;
+                }
+            }
+        }
+        if(this.point1 && this.point2) {
+            this.CreateEdge(this.point1, this.point2);
+            this.point1.DeselectThis();
+            this.point2.DeselectThis();
+            this.point1 = null;
+            this.point2 = null;
+        }
+    }
+
+    DeleteEdgeFromGraph(event) {
+        for (const point of this.points) {
+            if(point.IsInside(event.realpos)) {
+                if(!this.point1) {
+                    point.SelectThis();
+                    this.point1 = point;
+                    break;
+                } else {
+                    if(this.point1 == point) {
+                        point.DeselectThis();
+                        this.point1 = null;
+                    } else {
+                        this.point2 = point;
+                        this.point2.SelectThis();
+                    }
+                    break;
+                }
+            }
+        }
+        if(this.point1 && this.point2) {
+            var edge = this.point1.DisconnectEdge(this.point2);
+            if(edge) {
+                this.edges.remove(edge);
+                this.ClassifyPoint(this.point1);
+                this.ClassifyPoint(this.point2);
+                this.CalculateMISAfterEdgeRemove(this.point1, this.point2);
+            }
+            this.point1.DeselectThis();
+            this.point2.DeselectThis();
+            this.point1 = null;
+            this.point2 = null;
         }
     }
 
@@ -270,6 +308,8 @@ export class GUI {
     SelectMode(event) {
         if(event == this.addButton) {
             this.modeAD = ADD;
+        } else if (event == this.misButton) {
+            this.modeAD = MIS;
         } else {
             this.modeAD = DELETE;
         }
@@ -281,6 +321,9 @@ export class GUI {
         if(this.modeVE == EDGE) {
             this.edgeButton.SelectThis();
             this.vertexButton.DeselectThis();
+            if(this.modeAD == MIS) {
+                this.modeAD = ADD;
+            }
         } else {
             this.vertexButton.SelectThis();
             this.edgeButton.DeselectThis();
@@ -289,9 +332,15 @@ export class GUI {
         if(this.modeAD == ADD) {
             this.addButton.SelectThis();
             this.deleteButton.DeselectThis();
+            this.misButton.DeselectThis();
+        } else if(this.modeAD == MIS) {
+            this.addButton.DeselectThis();
+            this.deleteButton.DeselectThis();
+            this.misButton.SelectThis();
         } else {
             this.addButton.DeselectThis();
             this.deleteButton.SelectThis();
+            this.misButton.DeselectThis();
         }
 
         if(this.point1) {
@@ -302,6 +351,7 @@ export class GUI {
             this.point2.DeselectThis();
             this.point2 = null;
         }
+
     }
 
     CoverOtherPoint(position) {
@@ -324,6 +374,7 @@ export class GUI {
     }
 
     ClearCanvas() {
+        this.maximumIndependentSet = [];
         this.points = [];
         this.edges = [];
         this.modeAD = ADD;
@@ -355,8 +406,157 @@ export class GUI {
             this.AddEdge(edge);
         }
         
-        this.ReclassifyAllPoints();
+        this.ClassifyPoint(p1);
+        this.ClassifyPoint(p2);
+
+       if(p1.IsPartOfMis() && p2.IsPartOfMis()) {
+            p1.SetPartOfMis(false);
+            p2.SetPartOfMis(true);
+            var L  = Array.from(new Set(p1.neighbors.filter((x) => x.classification == CLASS_LOW)));
+            for (const w of p1.neighbors) {
+                if(!L.includes(w)) {
+                    if(w.MIS_neighbors() == 0) {
+                        w.SetPartOfMis(true);
+                    }
+                } else {
+                    var L_mis =  []; // L.filter((x) => x.Real_MIS_Neighbors() == 0);
+                    var L_1hop = []; // L.filter((x) => x.MIS_neighbors() == 0);
+                    
+                    // Itt kellene segitseg, hogy ez helyes-e
+                    var a  = [];
+                    for (const point of w.mis_2hop_neighbors) {
+                        if(L.includes(point)) {
+                            a.push(point);
+                        }
+                    }
+                    
+                    var L_2hop = a;
+
+                    var l_mis = L_mis.length;
+                    var l_1hop = L_1hop.length;
+                    var l_2hop = L_2hop.length;
+
+                    if(l_2hop <= 4 * this.edges.length ** 0.75) {
+                        for (const point of L_2hop) {
+                            if(point.MIS_neighbors == 0) {
+                                L_1hop.push(point);
+                            }
+                        }
+
+
+                        if(l_1hop <= 4 * this.edges.length ** 0.5) {
+                            for (const point of L_1hop) {
+                                if(point.real_mis_neighbors == 0) {
+                                    L_mis.push(point);
+                                }
+                            }
+                            for (const point of L_mis) {
+                                if(point.MIS_neighbors() == 0){
+                                    point.SetPartOfMis(true);
+                                }
+                            }
+                        } else {
+                            // 1/b eset implementalasa
+                            for (const p1 of L_1hop) {
+                                var arr_to_check = p1.mis_neighbors.splice();
+                                while (arr_to_check.length > 0) {
+                                    var marked = [];
+                                    for (const point of arr_to_check) {
+                                        if(point.classification == CLASS_HIGH &&
+                                            point.Real_MIS_Neighbors() != 0) {
+                                                marked.push(point);
+                                            }
+                                    }
+                                    for (const point of marked) {
+                                        point.SetPartOfMis(false);
+                                    }
+                                    arr_to_check = marked.splice();
+                                }
+                            }
+
+                        }
+                    } else {
+                        for (const point of L_2hop) {
+                            if(point.real_mis_neighbors == 0) {
+                                point.SetPartOfMis(true);
+                            }
+                        }
+
+                        for (const point of L_2hop) {
+                            var arr_to_check = point.real_mis_neighbors.splice();
+                            while (arr_to_check.length > 0) {
+                                var marked = [];
+                                for (const point of arr_to_check) {
+                                    if((point.classification == CLASS_MED_LOW || 
+                                        point.classification == CLASS_LOW) &&
+                                        point.Real_MIS_Neighbors() != 0) {
+                                            marked.push(point);
+                                        }
+                                }
+                                for (const point of t_marked) {
+                                    point.SetPartOfMis(false);
+                                }
+                                arr_to_check = marked.splice();
+                            }
+                            
+                        }
+                    }
+                    
+
+                }
+            }
+        }
     }
+
+    CalculateL2hop(L){
+        var unique_neighbors = new Set();
+        for (const p of L) {
+            for (const p1 of p.neighbors) {
+                for (const p2 of p1.neighbors) {
+                    if(p2.MIS_neighbors() == 0) {
+                        unique_neighbors.add(p2);
+                    }
+                }
+            }
+        }
+        return Array.from(unique_neighbors);
+    }
+
+    CalculateMISAfterEdgeRemove(p1, p2) {
+        p1.Calculate_MIS_neighbors();
+        p2.Calculate_MIS_neighbors();
+        if(!p1.IsPartOfMis() && !p2.IsPartOfMis()) {
+            // PASS
+        } else if (p1.IsPartOfMis() && !p2.IsPartOfMis()) {
+            if(p2.MIS_neighbors() == 0 && p2.classification == CLASS_LOW) {
+                var flag = false;
+                for (const neighbor of p2.neighbors) {
+                    if(neighbor.IsPartOfMis()) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if(!flag) {
+                    p2.SetPartOfMis(true);
+                }
+            }
+        } else if (!p1.IsPartOfMis() && p2.IsPartOfMis()) {
+            if(p1.MIS_neighbors() == 0 && p1.classification == CLASS_LOW) {
+                var flag = false;
+                for (const neighbor of p1.neighbors) {
+                    if(neighbor.IsPartOfMis()) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if(!flag) {
+                    p1.SetPartOfMis(true);
+                }
+            }
+        }
+    } 
+
+    
 
     UpdateClassArrayTexts() {
         this.lHighText.SetText("["+ this.highArr.join(", ") + "]");
@@ -382,15 +582,9 @@ export class GUI {
         } else {
             point.SetClassification(CLASS_LOW);
         }
-    }
-
-    ReclassifyAllPoints() {
-        for (const point of this.points) {
-            this.ClassifyPoint(point);
-        }
         this.RecollectClassArrays();
     }
-
+    
     RecollectClassArrays() {
         this.highArr = [];
         this.highMedArr = [];
@@ -408,6 +602,20 @@ export class GUI {
             }
         }
         this.UpdateClassArrayTexts();
+    }
+
+    ChangeMis(event) {
+        for (const point of this.points) {
+            if (point.IsInside(event.realpos)) {
+                if(!point.IsPartOfMis()) {
+                    if(!point.neighbors.some(x=>x.IsPartOfMis() == true)) {
+                        point.SetPartOfMis(true);
+                    }
+                } else {
+                    point.SetPartOfMis(false);
+                }
+            }
+        }
     }
 
     LoadDemo() {
@@ -454,4 +662,6 @@ export class GUI {
 
         
     }
+
+    
 }
