@@ -124,10 +124,9 @@ export class Point extends AbstractDrawable {
 
     SetPartOfMis(state) {
         this.partOfMis = state;
-        if(state) {
-            for (const point of this.neighbors) {
-                point.Calculate_MIS_neighbors();
-            }
+        for (const point of this.neighbors) {
+            point.Calculate_MIS_neighbors()
+            point.Calculate_MIS_2hop_neighbors();
         }
     }
 
@@ -185,6 +184,7 @@ export class Point extends AbstractDrawable {
     Calculate_MIS_2hop_neighbors() {
         this.mis_2hop_neighbors = [];
         this.CollectUnique2HopNeighbors();
+        this.unique_2hop_neighbors.delete(this);
         for (const point of this.unique_2hop_neighbors) {
             if(point.IsPartOfMis() && 
                     (point.classification == CLASS_LOW || 
@@ -197,8 +197,8 @@ export class Point extends AbstractDrawable {
     CollectUnique2HopNeighbors() {
         this.unique_2hop_neighbors = new Set();
         for (const point of this.neighbors) {
-            for (const neighbor in point.NeighborPoints()) {
-                unique_2hop_neighbors.add(neighbor);
+            for (const neighbor of point.neighbors) {
+                this.unique_2hop_neighbors.add(neighbor);
             }
         }
     }
