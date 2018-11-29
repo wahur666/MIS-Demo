@@ -394,6 +394,7 @@ export class GUI {
 
     CreatePoint(x, y) {
         var point = new Point(x, y, this.pointCounter);
+        point.SetPartOfMis(true);
         this.AddPoint(point);
         this.pointCounter += 1;
         return point;
